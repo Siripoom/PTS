@@ -8,18 +8,52 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
-  role     String @default("patient")
-  bookings Booking[]
+  id         String   @id @default(uuid()) @unique
+  fullName   String
+  email      String   @unique
+  password   String
+  role       Role     @default(USER)
+  citizen_id String   @unique @db.VarChar(13) // เก็บเลขบัตรประชาชน
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  bookingsAsUser   Booking[] @relation(name: "BookingUser")
+  bookingsAsDriver Booking[] @relation(name: "BookingDriver")
+  bookingsAssigned Booking[] @relation(name: "BookingAssignedBy")
+}
+
+enum Role {
+  ADMIN
+  HOST
+  STAFF
+  USER
 }
 
 model Booking {
-  id         Int    @id @default(autoincrement())
-  userId     Int
-  pickupTime DateTime
-  status     String @default("pending")
-  User       User   @relation(fields: [userId], references: [id])
+  id          String   @id @default(uuid()) @unique
+  userId      String   @map("user_id") // ผู้ป่วยที่จอง
+  driverId    String?  @map("driver_id") // คนขับที่ได้รับมอบหมาย (อาจเป็น null)
+  assignedBy  String?  @map("assigned_by") // คนที่มอบหมาย
+  pickupDate  DateTime // วันที่ต้องการให้ไปรับ
+  pickupTime  DateTime // เวลาที่ต้องการให้ไปรับ
+  pickupLat   Float    // พิกัดละติจูดของจุดรับ
+  pickupLng   Float    // พิกัดลองจิจูดของจุดรับ
+  isCancelled Boolean  @default(false) // สถานะการยกเลิก
+  status      Status   @default(PENDING) // สถานะการจอง
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  User        User   @relation(name: "BookingUser", fields: [userId], references: [id])
+  Driver      User?  @relation(name: "BookingDriver", fields: [driverId], references: [id])
+  AssignedBy  User?  @relation(name: "BookingAssignedBy", fields: [assignedBy], references: [id])
+
+  @@map("bookings")
+}
+
+enum Status {
+  PENDING      // รอการมอบหมาย
+  ASSIGNED     // มีคนขับรับงานแล้ว
+  IN_PROGRESS  // กำลังเดินทาง
+  COMPLETED    // ส่งถึงโรงพยาบาลแล้ว
+  CANCELLED    // ถูกยกเลิก
 }
