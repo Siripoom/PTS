@@ -1,3 +1,5 @@
 {
-  "rewrites": [{ "source": "/admin/dashboard", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/admin/manage-booking/:id", "destination": "/index.html" }
+  ]
 }
