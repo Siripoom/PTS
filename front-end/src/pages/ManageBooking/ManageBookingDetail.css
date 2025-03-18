@@ -1,0 +1,115 @@
+/* Container หลักของหน้า */
+.dashboard-container {
+  padding: 24px;
+  background-color: #f4f5f7; /* สีพื้นหลังของเนื้อหา */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* การจัดการกับ wrapper ของเนื้อหาภายใน */
+.content-wrapper {
+  width: 100%;
+  max-width: 1200px; /* ปรับขนาดของเนื้อหาภายใน */
+  margin-top: 20px;
+}
+
+/* Card ภายใน */
+.ant-card {
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ขนาดและการตั้งค่า Title ของการจอง */
+.ant-typography {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* การตั้งค่าสำหรับการแสดงแผนที่ */
+.map-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+/* ปรับรูปแบบปุ่ม "เริ่มนำทาง" */
+.ant-btn-primary {
+  background-color: #4caf50;
+  border-color: #4caf50;
+  font-size: 16px;
+  padding: 10px 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+
+.ant-btn-primary:hover {
+  background-color: #45a049;
+  border-color: #45a049;
+}
+
+/* ปรับรูปแบบของแต่ละคอลัมน์ */
+.ant-col {
+  margin-bottom: 20px;
+}
+
+.ant-card-title {
+  font-size: 20px;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* การตั้งค่าแสดงผลของข้อมูลในคอลัมน์ */
+.ant-typography p {
+  margin: 8px 0;
+  font-size: 16px;
+  color: #555;
+}
+
+/* สถานะของการจอง */
+.status-label {
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.status-label.success {
+  color: white;
+  background-color: #4caf50;
+}
+
+.status-label.pending {
+  color: white;
+  background-color: #f44336;
+}
+
+/* ปรับพื้นที่สำหรับข้อมูลการจอง */
+.card .ant-card-body {
+  padding: 24px;
+}
+
+/* ปรับการแสดงผลของแผนที่ */
+.map-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* ปรับปุ่มเริ่มนำทาง */
+.ant-btn-primary {
+  background-color: #4caf50;
+  border-color: #4caf50;
+  font-size: 16px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.ant-btn-primary:hover {
+  background-color: #45a049;
+  border-color: #45a049;
+}

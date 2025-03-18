@@ -1,0 +1,57 @@
+.manageBooking-container {
+  padding: 24px;
+  background: #f8f9fc;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+.content-wrapper {
+  width: 100%;
+  max-width: 1100px;
+}
+
+.page-title {
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 300px;
+  margin-bottom: 16px;
+}
+
+.booking-table {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* สไตล์สำหรับสถานะ */
+.status-label {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.success {
+  color: #389e0d;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.pending {
+  color: #d46b08;
+  background-color: #fff7e6;
+  border: 1px solid #ffd591;
+}

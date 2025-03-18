@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import prisma from "./config/db.js"; // นำ Prisma Client มาใช้
 import authRoutes from "./routes/authRoutes.js";
-
+import bookingRoutes from "./routes/bookingRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -13,6 +13,7 @@ app.use(express.json());
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/booking", bookingRoutes);
 
 // ทดสอบ API Health Check
 app.get("/", async (req, res) => {
