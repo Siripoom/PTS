@@ -19,7 +19,9 @@ import { useNavigate } from "react-router-dom"; // For redirecting to login page
 import { createBooking } from "../../services/api";
 import { jwtDecode } from "jwt-decode";
 import dayjs from "dayjs";
-
+import "dayjs/locale/th";
+dayjs.locale("th"); // ตั้ง locale เป็นภาษาไทย
+import th_TH from "antd/es/date-picker/locale/th_TH";
 const Booking = () => {
   const [location, setLocation] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -189,6 +191,7 @@ const Booking = () => {
                 rules={[{ required: true, message: "โปรดเลือกวันจอง" }]}
               >
                 <DatePicker
+                  locale={th_TH}
                   className="w-full rounded-lg shadow-sm"
                   disabledDate={(current) =>
                     current && current < dayjs().startOf("day")
