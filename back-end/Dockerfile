@@ -6,9 +6,7 @@ WORKDIR /app
 
 # คัดลอก package.json และติดตั้ง dependencies
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev && npx prisma generate
-
-
+RUN npm install 
 
 # คัดลอกโค้ดทั้งหมดไปยัง container
 COPY . .
