@@ -7,8 +7,11 @@ RUN npm install --omit=dev
 
 COPY . .
 
-# สร้างตารางจาก schema.prisma + generate client
-RUN npx prisma db push && npx prisma generate
+# ⛳ inject DATABASE_URL แบบชั่วคราว สำหรับ prisma generate + db push
+RUN echo "DATABASE_URL=${DATABASE_URL}" > prisma/.env && \
+    npx prisma db push && \
+    npx prisma generate && \
+    rm prisma/.env
 
 EXPOSE 5000
 
