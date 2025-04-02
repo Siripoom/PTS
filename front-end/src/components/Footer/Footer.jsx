@@ -1,6 +1,6 @@
 import React from "react";
 import { Layout, Row, Col, Button } from "antd";
-
+import { Link } from "react-router-dom";
 const { Footer } = Layout;
 
 const CustomFooter = () => {
@@ -20,17 +20,18 @@ const CustomFooter = () => {
         <Col xs={24} md={12}>
           <Row justify="center" gutter={[16, 16]}>
             <Col>
-              <a href="#">Booking</a>
-            </Col>
-            <Col>
-              <a href="#">History</a>
+              <Link to="/booking">Booking</Link>
             </Col>
           </Row>
         </Col>
 
         {/* ปุ่มติดต่อ */}
         <Col xs={24} md={6} className="flex justify-center md:justify-end">
-          <Button type="primary">Contact Us</Button>
+          <Button type="primary">
+            <Link to="/contact" type="primary">
+              Contact
+            </Link>
+          </Button>
         </Col>
       </Row>
     </Footer>

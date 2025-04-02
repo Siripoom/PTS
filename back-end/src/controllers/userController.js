@@ -1,3 +1,5 @@
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
@@ -10,12 +12,30 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Error retrieving users", error });
   }
 };
+exports.getAllStuff = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        role: "STUFF",
+      },
+    });
+    res.json({ message: "success", data: users });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving users", error });
+  }
+};
 
 exports.getSingleUser = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
+      include: {
+        bookingsAsUser: true,
+        bookingsAsDriver: true,
+        bookingsAssigned: true,
+      },
     });
+
     res.json({ message: "success", data: user });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving user", error });
@@ -43,9 +63,16 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
+    // ลบ bookings ที่เกี่ยวข้องก่อน
+    await prisma.booking.deleteMany({
+      where: { userId: req.params.id },
+    });
+
+    // ลบ User
     const deletedUser = await prisma.user.delete({
       where: { id: req.params.id },
     });
+
     res.json({ message: "User deleted successfully", data: deletedUser });
   } catch (error) {
     res.status(500).json({ message: "Error deleting user", error });
@@ -60,7 +87,6 @@ exports.createUser = async (req, res) => {
     const existingUser = await prisma.user.findUnique({
       where: { citizen_id },
     });
-
     if (existingUser) {
       return res.status(400).json({ message: "Citizen ID already exists" });
     }

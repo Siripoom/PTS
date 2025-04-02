@@ -1,20 +1,56 @@
 import { PrismaClient } from "@prisma/client";
-
+import dayjs from "dayjs";
 const prisma = new PrismaClient();
-
+import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 // ✅ สร้างการจองรถ
 export const createBooking = async (req, res) => {
   try {
-    const { pickupTime, pickupLat, pickupLng, pickupDate } = req.body;
-    const userId = req.user.id; // ดึงจาก Token
+    const { pickupTime, pickupLat, pickupLng } = req.body;
+    const pickupTimeParsed = dayjs(pickupTime);
+    const userId = req.user?.id;
 
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID not found in token" });
+    }
+
+    if (!pickupTime || !pickupLat || !pickupLng) {
+      return res
+        .status(400)
+        .json({ message: "Missing pickupTime or location data" });
+    }
+
+    const origin = "19.9315402,99.2209747"; // โรงพยาบาล
+    const destination = `${pickupLat},${pickupLng}`;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${apiKey}`;
+    const response = await axios.get(url);
+
+    if (
+      !response.data.routes ||
+      !response.data.routes[0] ||
+      !response.data.routes[0].legs[0]
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Could not calculate distance from Google API" });
+    }
+
+    const distanceInMeters = response.data.routes[0].legs[0].distance.value;
+    const duration = response.data.routes[0].legs[0].duration.value;
+    const distanceInKm = distanceInMeters / 1000; // 🔁 แปลงเมตรเป็นกิโลเมตร
     const newBooking = await prisma.booking.create({
       data: {
         userId,
-        pickupTime: new Date(pickupTime),
+        pickupTime: pickupTimeParsed.toDate(),
+        pickupDate: pickupTimeParsed.toDate(),
         pickupLat,
         pickupLng,
-        pickupDate,
+        distance: Number(distanceInKm.toFixed(2)), // 🔢 ปัดเศษเป็น 2 ตำแหน่ง
         status: "PENDING",
       },
     });
@@ -30,9 +66,12 @@ export const createBooking = async (req, res) => {
 // ✅ ดึงรายการจองทั้งหมด (สำหรับเจ้าหน้าที่)
 export const getAllBookings = async (req, res) => {
   try {
+    // read ascending
+
     const bookings = await prisma.booking.findMany({
+      orderBy: { createdAt: "desc" },
       include: {
-        User: { select: { fullName: true, email: true } },
+        User: { select: { fullName: true, phone: true } },
         Driver: { select: { fullName: true } },
       },
     });
@@ -47,10 +86,11 @@ export const getAllBookings = async (req, res) => {
 export const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Booking ID:", id);
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
-        User: { select: { fullName: true, email: true } },
+        User: { select: { fullName: true, phone: true } },
         Driver: { select: { fullName: true } },
       },
     });
@@ -64,14 +104,14 @@ export const getBookingById = async (req, res) => {
 };
 
 // ✅ อัปเดตสถานะการจอง (เจ้าหน้าที่เปลี่ยนสถานะ หรือมอบหมายคนขับ)
-export const updateBookingStatus = async (req, res) => {
+export const updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, driverId, isCancelled } = req.body;
+    const { status } = req.body;
 
     const updatedBooking = await prisma.booking.update({
       where: { id },
-      data: { status, driverId, isCancelled },
+      data: { status },
     });
 
     res.json({ message: "Booking status updated", booking: updatedBooking });
@@ -85,9 +125,8 @@ export const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const updatedBooking = await prisma.booking.update({
+    const updatedBooking = await prisma.booking.delete({
       where: { id },
-      data: { status: "CANCELLED" },
     });
 
     res.json({ message: "Booking cancelled", booking: updatedBooking });

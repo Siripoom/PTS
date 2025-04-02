@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // ✅ ลงทะเบียนผู้ใช้
 exports.register = async (req, res) => {
   try {
-    const { fullName, email, password, role, citizen_id } = req.body;
+    const { fullName, email, password, role, citizen_id, phone } = req.body;
 
     // ตรวจสอบเลขบัตรประชาชนว่ามีอยู่หรือไม่
     const existingUser = await prisma.user.findUnique({
@@ -29,6 +29,7 @@ exports.register = async (req, res) => {
         password: hashedPassword,
         role: role || "USER",
         citizen_id,
+        phone,
       },
     });
 
@@ -59,7 +60,7 @@ exports.login = async (req, res) => {
 
     // สร้าง JWT Token
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: user.role, fullName: user.fullName },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );

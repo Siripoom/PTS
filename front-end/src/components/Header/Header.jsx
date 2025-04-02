@@ -3,27 +3,29 @@ import "./Header.css";
 import PropTypes from "prop-types";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-
+import { jwtDecode } from "jwt-decode";
 import { HomeOutlined } from "@ant-design/icons";
+
 const Header = ({ title }) => {
   const navigate = useNavigate();
   const location = useLocation(); // ใช้เพื่อดึง path ปัจจุบัน
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // ตรวจสอบ token หรือข้อมูลผู้ใช้จาก localStorage
-    const token = localStorage.getItem("token");
-    const username = localStorage.getItem("username"); // สมมติว่า username ถูกเก็บไว้
-    if (token && username) {
-      setUser(username);
+    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token); // decode token
+        setUser(decodedToken); // ตั้งค่า user
+        console.log(decodedToken);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
     }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("role");
     setUser(null);
     navigate("/");
   };
@@ -64,7 +66,6 @@ const Header = ({ title }) => {
     <div className="dashboard-header">
       <div className="header-left">
         <h3 className="title mb-1">{title}</h3>
-
         {generateBreadcrumb()}
       </div>
 
@@ -72,7 +73,7 @@ const Header = ({ title }) => {
         <Dropdown overlay={menu} trigger={["click"]}>
           <div className="user-info">
             <div className="user-details">
-              <span className="user-name">{user}</span>
+              <span className="user-name">{user?.fullName}</span>
             </div>
           </div>
         </Dropdown>

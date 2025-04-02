@@ -49,9 +49,20 @@
   background-color: #f6ffed;
   border: 1px solid #b7eb8f;
 }
+.in-progress {
+  color: #ffffff;
+  background-color: #341eff;
+  border: 1px solid #9d8feb;
+}
 
 .pending {
   color: #d46b08;
   background-color: #fff7e6;
+  border: 1px solid #ffd591;
+}
+
+.warning {
+  color: #ffffffce;
+  background-color: #ffba25;
   border: 1px solid #ffd591;
 }

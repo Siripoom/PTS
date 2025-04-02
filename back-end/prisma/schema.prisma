@@ -8,18 +8,39 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid()) @unique
-  fullName   String
-  email      String   @unique
-  password   String
-  role       Role     @default(USER)
-  citizen_id String   @unique @db.VarChar(13) // เก็บเลขบัตรประชาชน
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               String    @id @unique @default(uuid())
+  fullName         String
+  email            String    @unique
+  password         String
+  role             Role      @default(USER)
+  citizen_id       String    @unique @db.VarChar(13)
+  phone            String    @unique
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  bookingsAssigned Booking[] @relation("BookingAssignedBy")
+  bookingsAsDriver Booking[] @relation("BookingDriver")
+  bookingsAsUser   Booking[] @relation("BookingUser")
+}
 
-  bookingsAsUser   Booking[] @relation(name: "BookingUser")
-  bookingsAsDriver Booking[] @relation(name: "BookingDriver")
-  bookingsAssigned Booking[] @relation(name: "BookingAssignedBy")
+model Booking {
+  id          String   @id @unique @default(uuid())
+  userId      String   @map("user_id")
+  driverId    String?  @map("driver_id")
+  assignedBy  String?  @map("assigned_by")
+  pickupDate  DateTime
+  pickupTime  DateTime
+  pickupLat   Float
+  pickupLng   Float
+  distance    Float
+  isCancelled Boolean  @default(false)
+  status      Status   @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  AssignedBy  User?    @relation("BookingAssignedBy", fields: [assignedBy], references: [id])
+  Driver      User?    @relation("BookingDriver", fields: [driverId], references: [id])
+  User        User     @relation("BookingUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
 }
 
 enum Role {
@@ -29,31 +50,10 @@ enum Role {
   USER
 }
 
-model Booking {
-  id          String   @id @default(uuid()) @unique
-  userId      String   @map("user_id") // ผู้ป่วยที่จอง
-  driverId    String?  @map("driver_id") // คนขับที่ได้รับมอบหมาย (อาจเป็น null)
-  assignedBy  String?  @map("assigned_by") // คนที่มอบหมาย
-  pickupDate  DateTime // วันที่ต้องการให้ไปรับ
-  pickupTime  DateTime // เวลาที่ต้องการให้ไปรับ
-  pickupLat   Float    // พิกัดละติจูดของจุดรับ
-  pickupLng   Float    // พิกัดลองจิจูดของจุดรับ
-  isCancelled Boolean  @default(false) // สถานะการยกเลิก
-  status      Status   @default(PENDING) // สถานะการจอง
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  User        User   @relation(name: "BookingUser", fields: [userId], references: [id])
-  Driver      User?  @relation(name: "BookingDriver", fields: [driverId], references: [id])
-  AssignedBy  User?  @relation(name: "BookingAssignedBy", fields: [assignedBy], references: [id])
-
-  @@map("bookings")
-}
-
 enum Status {
-  PENDING      // รอการมอบหมาย
-  ASSIGNED     // มีคนขับรับงานแล้ว
-  IN_PROGRESS  // กำลังเดินทาง
-  COMPLETED    // ส่งถึงโรงพยาบาลแล้ว
-  CANCELLED    // ถูกยกเลิก
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }

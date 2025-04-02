@@ -1,11 +1,14 @@
 import React from "react";
-import { Form, Input, Button, Card } from "antd";
+import { Form, Input, Button, Card, message } from "antd";
 import { UserOutlined, LockOutlined, PhoneOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
+import { createUser } from "../../services/api";
 const Register = () => {
-  const onFinish = (values) => {
-    console.log("Register Data:", values);
+  const onFinish = async (values) => {
+    await createUser(values);
+    message.success("ลงทะเบียนสําเร็จ");
+    window.location.href = "/auth/login";
   };
 
   return (
@@ -30,10 +33,17 @@ const Register = () => {
             size="large"
           >
             <Form.Item
-              name="username"
+              name="fullName"
               rules={[{ required: true, message: "โปรดป้อนชื่อผู้ใช้" }]}
             >
               <Input prefix={<UserOutlined />} placeholder="ชื่อผู้ใช้งาน" />
+            </Form.Item>
+            <Form.Item
+              name="email"
+              type="email"
+              rules={[{ required: true, message: "โปรดป้อนอีเมลล์" }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="อีเมลล์" />
             </Form.Item>
 
             <Form.Item
@@ -78,6 +88,19 @@ const Register = () => {
               ]}
             >
               <Input prefix={<PhoneOutlined />} placeholder="เบอร์โทรศัพท์" />
+            </Form.Item>
+
+            <Form.Item
+              name="citizen_id"
+              rules={[
+                { required: true, message: "โปรดป้อนเลขบัตรประชาชน" },
+                {
+                  pattern: /^[0-9]{13}$/,
+                  message: "กรุณากรอกเลขบัตรประชาชน 13 หลัก",
+                },
+              ]}
+            >
+              <Input placeholder="เลขบัตรประชาชน" />
             </Form.Item>
 
             <Form.Item>
