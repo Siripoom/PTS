@@ -5,7 +5,7 @@ FROM node:18
 WORKDIR /app
 
 # คัดลอก package.json และติดตั้ง dependencies
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm install 
 
 # คัดลอกโค้ดทั้งหมดไปยัง container
