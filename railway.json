@@ -1,6 +1,9 @@
 {
   "build": {
     "dockerfilePath": "back-end/Dockerfile",
-    "context": "back-end"
+    "context": "back-end",
+    "buildArgs": {
+      "DATABASE_URL": "env:DATABASE_URL"
+    }
   }
 }
