@@ -1,18 +1,15 @@
-# ใช้ Node.js เวอร์ชันล่าสุด
 FROM node:18
 
-# กำหนดโฟลเดอร์ทำงานใน Container
 WORKDIR /app
 
-# คัดลอก package.json และติดตั้ง dependencies
 COPY package*.json ./
-RUN npm install 
+RUN npm install --omit=dev
 
-# คัดลอกโค้ดทั้งหมดไปยัง container
 COPY . .
 
-# เปิดพอร์ตที่ใช้งาน
+# สร้างตารางจาก schema.prisma + generate client
+RUN npx prisma db push && npx prisma generate
+
 EXPOSE 5000
 
-# คอมไพล์ Prisma Client และรันเซิร์ฟเวอร์
-CMD ["sh", "-c", "npx prisma generate && node src/server.js"]
+CMD ["node", "src/server.js"]
