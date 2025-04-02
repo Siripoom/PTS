@@ -1,15 +1,14 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // ✅ ลงทะเบียนผู้ใช้
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { fullName, email, password, role, citizen_id, phone } = req.body;
 
-    // ตรวจสอบเลขบัตรประชาชนว่ามีอยู่หรือไม่
     const existingUser = await prisma.user.findUnique({
       where: { citizen_id },
     });
@@ -18,10 +17,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Citizen ID already exists" });
     }
 
-    // เข้ารหัสรหัสผ่าน
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // สร้างผู้ใช้ใหม่
     const newUser = await prisma.user.create({
       data: {
         fullName,
@@ -44,7 +41,7 @@ exports.register = async (req, res) => {
 };
 
 // ✅ เข้าสู่ระบบ
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -58,7 +55,6 @@ exports.login = async (req, res) => {
     if (!validPassword)
       return res.status(401).json({ message: "Invalid credentials" });
 
-    // สร้าง JWT Token
     const token = jwt.sign(
       { id: user.id, role: user.role, fullName: user.fullName },
       process.env.JWT_SECRET,
@@ -72,7 +68,7 @@ exports.login = async (req, res) => {
 };
 
 // ✅ ดึงข้อมูลผู้ใช้จาก JWT
-exports.getUserProfile = async (req, res) => {
+export const getUserProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },

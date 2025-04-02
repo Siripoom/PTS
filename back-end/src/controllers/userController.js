@@ -1,10 +1,11 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-exports.getAllUsers = async (req, res) => {
+// ✅ ดึงผู้ใช้ทั้งหมด
+export const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany();
     res.json({ message: "success", data: users });
@@ -12,20 +13,21 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Error retrieving users", error });
   }
 };
-exports.getAllStuff = async (req, res) => {
+
+// ✅ ดึงเฉพาะผู้ใช้ที่มี role = STUFF
+export const getAllStuff = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      where: {
-        role: "STUFF",
-      },
+      where: { role: "STUFF" },
     });
     res.json({ message: "success", data: users });
   } catch (error) {
-    res.status(500).json({ message: "Error retrieving users", error });
+    res.status(500).json({ message: "Error retrieving STUFF users", error });
   }
 };
 
-exports.getSingleUser = async (req, res) => {
+// ✅ ดึงผู้ใช้รายคน (รวมการจองที่เกี่ยวข้อง)
+export const getSingleUser = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -42,7 +44,8 @@ exports.getSingleUser = async (req, res) => {
   }
 };
 
-exports.updateUser = async (req, res) => {
+// ✅ อัปเดตข้อมูลผู้ใช้
+export const updateUser = async (req, res) => {
   try {
     const { fullName, email, role } = req.body;
 
@@ -61,14 +64,13 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-exports.deleteUser = async (req, res) => {
+// ✅ ลบผู้ใช้ (พร้อมลบการจองที่เกี่ยวข้อง)
+export const deleteUser = async (req, res) => {
   try {
-    // ลบ bookings ที่เกี่ยวข้องก่อน
     await prisma.booking.deleteMany({
       where: { userId: req.params.id },
     });
 
-    // ลบ User
     const deletedUser = await prisma.user.delete({
       where: { id: req.params.id },
     });
@@ -79,22 +81,21 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-exports.createUser = async (req, res) => {
+// ✅ สร้างผู้ใช้ใหม่
+export const createUser = async (req, res) => {
   try {
     const { fullName, email, password, role, citizen_id } = req.body;
 
-    // ตรวจสอบเลขบัตรประชาชนว่ามีอยู่หรือไม่
     const existingUser = await prisma.user.findUnique({
       where: { citizen_id },
     });
+
     if (existingUser) {
       return res.status(400).json({ message: "Citizen ID already exists" });
     }
 
-    // เข้ารหัสรหัสผ่าน
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // สร้างผู้ใช้ใหม่
     const newUser = await prisma.user.create({
       data: {
         fullName,
