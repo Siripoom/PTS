@@ -8,6 +8,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
+WORKDIR /app
+
 # คัดลอกโค้ดทั้งหมดไปยัง container
 COPY . .
 
