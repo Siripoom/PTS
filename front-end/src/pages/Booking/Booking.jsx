@@ -289,7 +289,7 @@ const Booking = () => {
             width="80%"
           >
             <LoadScript
-              googleMapsApiKey="AIzaSyDL24tbIFnNVaRsSZM9bpoN54NtyTKIj74"
+              googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
               libraries={["places"]}
             >
               <GoogleMap
