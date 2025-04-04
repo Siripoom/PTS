@@ -16,7 +16,6 @@ const Navbar = () => {
       try {
         const decodedToken = jwtDecode(token); // decode token
         setUser(decodedToken); // ตั้งค่า user
-        console.log(decodedToken);
       } catch (error) {
         console.error("Error decoding token:", error);
       }

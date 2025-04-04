@@ -86,7 +86,7 @@ export const getAllBookings = async (req, res) => {
 export const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Booking ID:", id);
+
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {

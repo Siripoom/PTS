@@ -7,28 +7,35 @@ import {
   TimePicker,
   message,
   Spin,
+  Modal,
 } from "antd";
-import {
-  UserOutlined,
-  PhoneOutlined,
-  EnvironmentOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import { useNavigate } from "react-router-dom"; // For redirecting to login page
+import { useNavigate } from "react-router-dom";
 import { createBooking } from "../../services/api";
 import { jwtDecode } from "jwt-decode";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
-dayjs.locale("th"); // ตั้ง locale เป็นภาษาไทย
 import th_TH from "antd/es/date-picker/locale/th_TH";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+
 const Booking = () => {
   const [location, setLocation] = useState("");
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [isModalVisible, setIsModalVisible] = useState(false); // For Google Map Modal
+
+  // Set default location based on GPS
+  const [currentPosition, setCurrentPosition] = useState({
+    lat: 13.736717,
+    lng: 100.523186,
+  });
 
   // Check if user is logged in on component mount and get user data
   useEffect(() => {
@@ -52,26 +59,50 @@ const Booking = () => {
     } else {
       setIsLoggedIn(false);
     }
-  }, [form]);
 
-  // Get user's current location (GPS)
-  const handleGetLocation = () => {
-    message.loading("กำลังดึงพิกัดปัจจุบัน...", 1);
-
+    // Get current position if available
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation(`${latitude}, ${longitude}`);
-          message.success("ดึงพิกัดสำเร็จ");
+          setCurrentPosition({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
         },
         (error) => {
-          console.error("Error getting location:", error);
-          message.error("ไม่สามารถดึงพิกัดได้ กรุณาลองใหม่อีกครั้ง");
+          console.error("Error getting GPS:", error);
         }
       );
+    }
+  }, [form]);
+
+  // Open Modal for selecting location
+  const showMapModal = () => {
+    setIsModalVisible(true);
+  };
+
+  // Close the map modal
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  // Handle map click to place marker
+  const handleMapClick = (event) => {
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    setLatitude(lat);
+    setLongitude(lng);
+    setLocation(`Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`);
+  };
+
+  // Confirm location selection and close modal
+  const confirmLocation = () => {
+    if (latitude && longitude) {
+      setIsModalVisible(false);
     } else {
-      message.error("เบราว์เซอร์ของคุณไม่รองรับการใช้งานพิกัด");
+      message.warning("กรุณาเลือกตำแหน่งบนแผนที่ก่อน");
     }
   };
 
@@ -83,15 +114,14 @@ const Booking = () => {
       return;
     }
 
+    if (!latitude || !longitude) {
+      message.error("กรุณาเลือกตำแหน่งบนแผนที่");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // แยกละติจูดและลองจิจูด
-      const [pickupLat, pickupLng] = location
-        ? location.split(",").map((val) => parseFloat(val.trim()))
-        : [null, null];
-
-      // สร้าง pickupTime เป็น ISO string (รวมวันที่ + เวลา)
       const pickupDate = values.pickupDate.format("YYYY-MM-DD");
       const pickupTime = values.pickupTime;
       const combinedDateTime = dayjs(
@@ -102,8 +132,8 @@ const Booking = () => {
       const bookingData = {
         pickupDate, // เช่น "2025-04-01"
         pickupTime: combinedDateTime, // เช่น "2025-04-01T08:30:00.000Z"
-        pickupLat,
-        pickupLng,
+        pickupLat: latitude,
+        pickupLng: longitude,
       };
 
       console.log("📦 Sending booking data:", bookingData);
@@ -128,11 +158,6 @@ const Booking = () => {
     }
   };
 
-  // Redirect to login page if user is not logged in
-  const handleLoginRedirect = () => {
-    navigate("/auth/login");
-  };
-
   return (
     <div className="bg-gradient-to-br from-blue-400 to-blue-600 min-h-screen flex flex-col">
       <Navbar />
@@ -153,7 +178,7 @@ const Booking = () => {
             {!isLoggedIn && (
               <div className="text-center mb-4 w-full">
                 <Button
-                  onClick={handleLoginRedirect}
+                  onClick={() => navigate("/auth/login")}
                   type="primary"
                   className="bg-blue-500 hover:bg-blue-600 text-white w-full"
                 >
@@ -210,35 +235,6 @@ const Booking = () => {
                 />
               </Form.Item>
 
-              {/* <Form.Item
-                name="address"
-                label="ที่อยู่"
-                rules={[{ required: true, message: "โปรดป้อนที่อยู่" }]}
-              >
-                <Input
-                  placeholder="ที่อยู่ที่ต้องการให้ไปรับ"
-                  className="rounded-lg shadow-sm"
-                />
-              </Form.Item> */}
-
-              {/* <Form.Item
-                name="phone"
-                label="เบอร์โทรศัพท์"
-                rules={[
-                  { required: true, message: "โปรดป้อนเบอร์โทรศัพท์" },
-                  {
-                    pattern: /^[0-9]{10}$/,
-                    message: "กรุณากรอกเบอร์โทร 10 หลัก",
-                  },
-                ]}
-              >
-                <Input
-                  prefix={<PhoneOutlined />}
-                  placeholder="เบอร์โทรศัพท์"
-                  className="rounded-lg shadow-sm"
-                />
-              </Form.Item> */}
-
               <div className="flex space-x-4">
                 <Form.Item className="flex-grow mb-0">
                   <Input
@@ -250,12 +246,11 @@ const Booking = () => {
                   />
                 </Form.Item>
                 <Button
-                  onClick={handleGetLocation}
+                  onClick={showMapModal}
                   type="default"
                   className="rounded-lg px-4 py-2 bg-blue-500 text-white hover:bg-blue-600"
-                  disabled={!isLoggedIn}
                 >
-                  เรียกดูพิกัด
+                  เลือกตำแหน่ง
                 </Button>
               </div>
 
@@ -265,13 +260,70 @@ const Booking = () => {
                   htmlType="submit"
                   block
                   className="rounded-lg py-3 text-white bg-green-600 hover:bg-green-700"
-                  disabled={!isLoggedIn}
+                  disabled={!isLoggedIn || !latitude || !longitude}
                 >
                   ยืนยันการจอง
                 </Button>
               </Form.Item>
             </Form>
           </Spin>
+
+          {/* Modal for Google Map */}
+          <Modal
+            title="เลือกตำแหน่ง"
+            visible={isModalVisible}
+            onCancel={handleCancel}
+            footer={[
+              <Button key="cancel" onClick={handleCancel}>
+                ยกเลิก
+              </Button>,
+              <Button
+                key="confirm"
+                type="primary"
+                onClick={confirmLocation}
+                disabled={!latitude || !longitude}
+              >
+                ยืนยันตำแหน่ง
+              </Button>,
+            ]}
+            width="80%"
+          >
+            <LoadScript
+              googleMapsApiKey="AIzaSyDL24tbIFnNVaRsSZM9bpoN54NtyTKIj74"
+              libraries={["places"]}
+            >
+              <GoogleMap
+                mapContainerStyle={{
+                  width: "100%",
+                  height: "400px",
+                }}
+                center={currentPosition}
+                zoom={12}
+                onClick={handleMapClick}
+              >
+                {latitude && longitude && (
+                  <Marker
+                    position={{
+                      lat: latitude,
+                      lng: longitude,
+                    }}
+                    draggable={true}
+                    onDragEnd={(e) => {
+                      const lat = e.latLng.lat();
+                      const lng = e.latLng.lng();
+                      setLatitude(lat);
+                      setLongitude(lng);
+                      setLocation(
+                        `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(
+                          6
+                        )}`
+                      );
+                    }}
+                  />
+                )}
+              </GoogleMap>
+            </LoadScript>
+          </Modal>
         </div>
       </div>
 

@@ -37,6 +37,7 @@ export const createUser = async (userData) => {
 // Function to login a user
 export const loginUser = async (userData) => {
   try {
+    console.log("Login response:", userData);
     const response = await api.post("/api/auth/login", userData);
     return response.data;
   } catch (error) {

@@ -16,7 +16,7 @@ const Register = () => {
       <Navbar />
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <Card className="w-full max-w-md p-8 rounded-2xl shadow-lg bg-white">
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-3">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2966/2966327.png"
               alt="ambulance"
