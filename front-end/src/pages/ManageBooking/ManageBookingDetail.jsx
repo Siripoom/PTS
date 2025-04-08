@@ -32,6 +32,22 @@ const ManageBookingDetail = () => {
     fetchBooking();
   }, [id]);
 
+  // ฟังก์ชันสำหรับการนำทางไปยังพิกัดที่กำหนด
+  const handleStartNavigation = () => {
+    if (booking && booking.pickupLat && booking.pickupLng) {
+      // สำหรับอุปกรณ์มือถือ จะเปิดแอป Google Maps หรือแอปแผนที่เริ่มต้น
+      // สำหรับเดสก์ท็อป จะเปิด Google Maps ในแท็บใหม่
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${booking.pickupLat},${booking.pickupLng}&travelmode=driving`;
+
+      // เปิด URL ในแท็บใหม่
+      window.open(url, "_blank");
+
+      message.success("กำลังเริ่มการนำทาง");
+    } else {
+      message.error("ไม่พบข้อมูลพิกัด");
+    }
+  };
+
   // ถ้าไม่มีข้อมูลการจองให้แสดงข้อความว่า "กำลังโหลด..."
   if (loading) {
     return (
@@ -102,6 +118,7 @@ const ManageBookingDetail = () => {
                   <Button
                     type="primary"
                     icon={<EnvironmentOutlined />}
+                    onClick={handleStartNavigation} // เพิ่ม event handler
                     style={{
                       marginTop: 20,
                       width: "100%",
