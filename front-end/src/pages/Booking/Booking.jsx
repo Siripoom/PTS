@@ -8,11 +8,14 @@ import {
   message,
   Spin,
   Modal,
+  Flex,
 } from "antd";
 import {
   UserOutlined,
   EnvironmentOutlined,
   AimOutlined,
+  PlusOutlined,
+  MinusOutlined,
 } from "@ant-design/icons";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
@@ -43,6 +46,7 @@ const Booking = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showInfoWindow, setShowInfoWindow] = useState(false);
   const [address, setAddress] = useState("");
+  const [countPatient, setCountPatient] = useState(1);
 
   // เพิ่มสถานะเพื่อเก็บและแสดงตำแหน่งปัจจุบัน
   const [currentPosition, setCurrentPosition] = useState({
@@ -103,6 +107,7 @@ const Booking = () => {
       });
     }
   };
+
 
   // Check if user is logged in on component mount and get user data
   useEffect(() => {
@@ -168,6 +173,9 @@ const Booking = () => {
     }
   };
 
+  const testFinish = (values) => {
+
+  }
   // Handle form submission
   const onFinish = async (values) => {
     if (!isLoggedIn) {
@@ -181,6 +189,11 @@ const Booking = () => {
       return;
     }
 
+    if(countPatient === 0){
+      message.error("กรุณากรอกผู้ป่วยอย่างน้อย 1 คน");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -191,12 +204,22 @@ const Booking = () => {
         "YYYY-MM-DD HH:mm"
       ).toISOString();
 
+      // สร้างรายชื่อผู้ป่วย
+      let patient = [];
+      for (let i = 0; i < countPatient; i++) {
+        patient.push({
+          name: values[`patient${i}`],
+          idCard: values[`idCard${i}`],
+        });
+      }
+
       const bookingData = {
         pickupDate,
         pickupTime: combinedDateTime,
         pickupLat: latitude,
         pickupLng: longitude,
         pickupAddress: address || undefined, // Include address if available
+        patients: patient,
       };
 
       console.log("📦 Sending booking data:", bookingData);
@@ -219,6 +242,10 @@ const Booking = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const deletePatient = () => {
+    setCountPatient(countPatient - 1);
   };
 
   // สร้างไอคอนสำหรับ Marker ที่แตกต่างกัน
@@ -291,6 +318,46 @@ const Booking = () => {
                   className="rounded-lg shadow-sm"
                 />
               </Form.Item>
+
+              {Array.from({ length: countPatient }).map((_, i) => (
+                <Flex key={i} justify="space-between" style={{ width: "100%", height: "100%" }} align="center">
+                  <Form.Item
+                    name={`patient${i}`}
+                    label={`ผู้ป่วย ${i + 1}`}
+                    style={{ marginBottom: "0px" }}
+                    rules={[{ required: true, message: "โปรดใส่ชื่อผู้ป่วย" }]}
+                  >
+                    <Input
+                      placeholder={`ชื่อผู้ป่วย ${i + 1}`}
+                      className="rounded-lg shadow-sm mb-0"
+                      style={{ marginBottom: "0px" }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name={`idCard${i}`}
+                    label={`เลขบัตรประชาชน ${i + 1}`}
+                    style={{ marginBottom: "0px", marginLeft: "5px", }}
+                    rules={[{ required: true, message: "ไม่ถูกต้อง" ,pattern: /^[0-9]{13}$/}]}
+                  >
+                    <Input
+                      placeholder={`ชื่อผู้ป่วย ${i + 1}`}
+                      className="rounded-lg shadow-sm mb-0"
+                      style={{ marginBottom: "0px" }}
+                    />
+                  </Form.Item>
+                  
+                </Flex>
+              ))}
+              <hr />
+              <Flex justify="center" align="center">
+                <Button style={{ backgroundColor: "green", color: "white", "borderRadius": "50%" }} onClick={() => setCountPatient(countPatient + 1)}><PlusOutlined /></Button>
+                {
+                  countPatient > 1 && (
+                    <Button style={{ backgroundColor: "#DB4437", color: "white", "borderRadius": "50%" }} onClick={() => deletePatient()}><MinusOutlined /></Button>
+                  )
+                }
+              </Flex>
+
 
               <Form.Item
                 name="pickupDate"
