@@ -7,7 +7,7 @@ dotenv.config();
 // ✅ สร้างการจองรถ
 export const createBooking = async (req, res) => {
   try {
-    const { pickupTime, pickupLat, pickupLng } = req.body;
+    const { pickupTime, pickupLat, pickupLng , patients } = req.body;
     const pickupTimeParsed = dayjs(pickupTime);
     const userId = req.user?.id;
 
@@ -43,6 +43,7 @@ export const createBooking = async (req, res) => {
     const distanceInMeters = response.data.routes[0].legs[0].distance.value;
     const duration = response.data.routes[0].legs[0].duration.value;
     const distanceInKm = distanceInMeters / 1000; // 🔁 แปลงเมตรเป็นกิโลเมตร
+
     const newBooking = await prisma.booking.create({
       data: {
         userId,
@@ -52,13 +53,23 @@ export const createBooking = async (req, res) => {
         pickupLng,
         distance: Number(distanceInKm.toFixed(2)), // 🔢 ปัดเศษเป็น 2 ตำแหน่ง
         status: "PENDING",
+        patients: {
+          create: patients.map(patient => ({
+            name: patient.name,
+            idCard: patient.idCard
+          }))
+        }
       },
+      include: {
+        patients: true
+      }
     });
 
     res
       .status(201)
       .json({ message: "Booking created successfully", booking: newBooking });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: "Error creating booking", error });
   }
 };
@@ -92,6 +103,7 @@ export const getBookingById = async (req, res) => {
       include: {
         User: { select: { fullName: true, phone: true } },
         Driver: { select: { fullName: true } },
+        patients: true,
       },
     });
 
