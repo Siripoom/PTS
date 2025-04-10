@@ -2,7 +2,7 @@ FROM node:18
 
 WORKDIR /app
 
-# คัดลอก package.json และ package-lock.json ก่อน เพื่อให้ npm install ใช้ cache จาก layer นี้
+# คัดลอก package.json และ package-lock.json ก่อน เพื่อใช้ cache สำหรับ npm install
 COPY package*.json ./
 RUN npm install --omit=dev
 
@@ -16,8 +16,6 @@ RUN echo "DATABASE_URL=${DATABASE_URL}" > prisma/.env && \
     npx prisma generate && \
     rm prisma/.env
 
-# เปิดพอร์ต 5000 สำหรับการเข้าถึงจากภายนอก
 EXPOSE 5000
 
-# เริ่มเซิร์ฟเวอร์
 CMD ["node", "src/server.js"]
