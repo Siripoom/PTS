@@ -2,7 +2,7 @@ FROM node:18
 
 WORKDIR /app
 
-# คัดลอก package.json และ package-lock.json ก่อน เพื่อใช้ cache สำหรับ npm install
+# คัดลอก package.json และ package-lock.json ก่อน เพื่อให้ npm install ใช้ cache
 COPY package*.json ./
 RUN npm install --omit=dev
 
