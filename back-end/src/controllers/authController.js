@@ -17,6 +17,15 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Citizen ID already exists" });
     }
 
+    // ตรวจสอบอีเมลซ้ำ
+    const existingEmail = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await prisma.user.create({
@@ -36,19 +45,32 @@ export const register = async (req, res) => {
       data: newUser,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ message: "Error registering user", error });
   }
 };
 
-// ✅ เข้าสู่ระบบ
+// ✅ เข้าสู่ระบบด้วยอีเมลหรือเลขบัตรประชาชน
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { login, password } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    // ตรวจสอบว่าเป็น email หรือ citizen_id
+    const isEmail = login.includes("@");
+
+    let user;
+
+    if (isEmail) {
+      // ค้นหาจากอีเมล
+      user = await prisma.user.findUnique({
+        where: { email: login },
+      });
+    } else {
+      // ค้นหาจากเลขบัตรประชาชน
+      user = await prisma.user.findUnique({
+        where: { citizen_id: login },
+      });
+    }
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -79,6 +101,7 @@ export const getUserProfile = async (req, res) => {
         email: true,
         role: true,
         citizen_id: true,
+        phone: true,
       },
     });
 

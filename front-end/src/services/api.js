@@ -35,9 +35,9 @@ export const createUser = async (userData) => {
 };
 
 // Function to login a user
+// ฟังก์ชันที่ปรับปรุงแล้วสำหรับการ login
 export const loginUser = async (userData) => {
   try {
-    console.log("Login response:", userData);
     const response = await api.post("/api/auth/login", userData);
     return response.data;
   } catch (error) {

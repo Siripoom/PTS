@@ -19,17 +19,16 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+    const token = localStorage.getItem("token");
     if (token) {
       try {
-        const decodedToken = jwtDecode(token); // decode token
-        setUser(decodedToken); // ตั้งค่า user
+        const decodedToken = jwtDecode(token);
+        setUser(decodedToken);
         console.log(decodedToken);
       } catch (error) {
         console.error("Error decoding token:", error);
       }
     } else {
-      // ถ้าไม่มี token ให้นำทางกลับไปยังหน้า login
       navigate("/");
     }
   }, [navigate]);
@@ -39,8 +38,18 @@ const Sidebar = () => {
     navigate("/");
   };
 
-  // ตรวจสอบว่าเป็น ADMIN หรือ STUFF หรือไม่
-  const isAdminOrStuff = user?.role === "ADMIN" || user?.role === "STAFF";
+  // ตรวจสอบสิทธิ์การเข้าถึงของผู้ใช้
+  const canManageUsers = ["ADMIN", "STAFF"].includes(user?.role);
+  const canManageBookings = ["ADMIN", "STAFF"].includes(user?.role);
+  const canViewPatients = ["ADMIN", "STAFF", "PUBLIC_HEALTH_OFFICER"].includes(
+    user?.role
+  );
+  const canAccessDashboard = [
+    "ADMIN",
+    "STAFF",
+    "PUBLIC_HEALTH_OFFICER",
+    "EXECUTIVE",
+  ].includes(user?.role);
 
   return (
     <div className="sidebar">
@@ -49,45 +58,48 @@ const Sidebar = () => {
         <h2 className="logo-text">ระบบรับรถส่งผู้ป่วย</h2>
       </div>
       <nav className="sidebar-nav">
-        <NavLink
-          to="/admin/dashboard"
-          className={({ isActive }) =>
-            isActive ? "nav-item active" : "nav-item"
-          }
-        >
-          <DashboardOutlined /> <span>ภาพรวม</span>
-        </NavLink>
+        {canAccessDashboard && (
+          <NavLink
+            to="/admin/dashboard"
+            className={({ isActive }) =>
+              isActive ? "nav-item active" : "nav-item"
+            }
+          >
+            <DashboardOutlined /> <span>ภาพรวม</span>
+          </NavLink>
+        )}
 
-        {/* แสดงเฉพาะเมื่อเป็น ADMIN หรือ STUFF */}
-        {isAdminOrStuff && (
-          <>
-            <NavLink
-              to="/admin/manage-booking"
-              className={({ isActive }) =>
-                isActive ? "nav-item active" : "nav-item"
-              }
-            >
-              <ReadOutlined /> <span>การจอง</span>
-            </NavLink>
+        {canManageBookings && (
+          <NavLink
+            to="/admin/manage-booking"
+            className={({ isActive }) =>
+              isActive ? "nav-item active" : "nav-item"
+            }
+          >
+            <ReadOutlined /> <span>การจอง</span>
+          </NavLink>
+        )}
 
-            <NavLink
-              to="/admin/patients"
-              className={({ isActive }) =>
-                isActive ? "nav-item active" : "nav-item"
-              }
-            >
-              <MedicineBoxOutlined /> <span>ผู้ป่วย</span>
-            </NavLink>
+        {canViewPatients && (
+          <NavLink
+            to="/admin/patients"
+            className={({ isActive }) =>
+              isActive ? "nav-item active" : "nav-item"
+            }
+          >
+            <MedicineBoxOutlined /> <span>ผู้ป่วย</span>
+          </NavLink>
+        )}
 
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) =>
-                isActive ? "nav-item active" : "nav-item"
-              }
-            >
-              <UserOutlined /> <span>ผู้ใช้งาน</span>
-            </NavLink>
-          </>
+        {canManageUsers && (
+          <NavLink
+            to="/admin/users"
+            className={({ isActive }) =>
+              isActive ? "nav-item active" : "nav-item"
+            }
+          >
+            <UserOutlined /> <span>ผู้ใช้งาน</span>
+          </NavLink>
         )}
 
         <div

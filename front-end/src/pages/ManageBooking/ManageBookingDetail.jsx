@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
-import { Layout, Card, Row, Col, Button, Typography, message } from "antd";
+import {
+  Layout,
+  Card,
+  Row,
+  Col,
+  Button,
+  Typography,
+  message,
+  Table,
+} from "antd";
 import { EnvironmentOutlined } from "@ant-design/icons";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Header from "../../components/Header/Header";
 import { useParams } from "react-router-dom";
 import { getSingleBooking } from "../../services/api";
 import dayjs from "dayjs"; // สำหรับการแปลงวันที่และเวลา
-import "./ManageBookingDetail.css";
+import "./ManageBooking.css";
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -47,6 +56,27 @@ const ManageBookingDetail = () => {
       message.error("ไม่พบข้อมูลพิกัด");
     }
   };
+
+  // คอลัมน์สำหรับตารางผู้ป่วย
+  const patientColumns = [
+    {
+      title: "ชื่อผู้ป่วย",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "เลขบัตรประชาชน",
+      dataIndex: "idCard",
+      key: "idCard",
+      render: (text) =>
+        text
+          ? text.replace(
+              /(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/,
+              "$1-$2-$3-$4-$5"
+            )
+          : "-",
+    },
+  ];
 
   // ถ้าไม่มีข้อมูลการจองให้แสดงข้อความว่า "กำลังโหลด..."
   if (loading) {
@@ -139,11 +169,33 @@ const ManageBookingDetail = () => {
                       height="300"
                       src={`https://www.google.com/maps?q=${booking.pickupLat},${booking.pickupLng}&hl=th&z=14&output=embed`}
                       title="แผนที่"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      allowFullScreen
                     ></iframe>
                   </div>
                 </Card>
               </Col>
             </Row>
+
+            {/* แสดงข้อมูลผู้ป่วย */}
+            {booking.patients && booking.patients.length > 0 && (
+              <Row className="mt-4">
+                <Col span={24}>
+                  <Card
+                    title={`รายชื่อผู้ป่วย (${booking.patients.length} คน)`}
+                  >
+                    <Table
+                      dataSource={booking.patients}
+                      columns={patientColumns}
+                      pagination={false}
+                      rowKey="id"
+                      size="middle"
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            )}
           </div>
         </Content>
       </Layout>

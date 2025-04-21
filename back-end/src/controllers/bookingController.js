@@ -4,10 +4,11 @@ const prisma = new PrismaClient();
 import axios from "axios";
 import dotenv from "dotenv";
 dotenv.config();
+
 // ✅ สร้างการจองรถ
 export const createBooking = async (req, res) => {
   try {
-    const { pickupTime, pickupLat, pickupLng , patients } = req.body;
+    const { pickupTime, pickupLat, pickupLng, patients } = req.body;
     const pickupTimeParsed = dayjs(pickupTime);
     const userId = req.user?.id;
 
@@ -21,6 +22,12 @@ export const createBooking = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Missing pickupTime or location data" });
+    }
+
+    if (!patients || !Array.isArray(patients) || patients.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one patient is required" });
     }
 
     const origin = "19.9315402,99.2209747"; // โรงพยาบาล
@@ -54,22 +61,22 @@ export const createBooking = async (req, res) => {
         distance: Number(distanceInKm.toFixed(2)), // 🔢 ปัดเศษเป็น 2 ตำแหน่ง
         status: "PENDING",
         patients: {
-          create: patients.map(patient => ({
+          create: patients.map((patient) => ({
             name: patient.name,
-            idCard: patient.idCard
-          }))
-        }
+            idCard: patient.idCard,
+          })),
+        },
       },
       include: {
-        patients: true
-      }
+        patients: true,
+      },
     });
 
     res
       .status(201)
       .json({ message: "Booking created successfully", booking: newBooking });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ message: "Error creating booking", error });
   }
 };
@@ -78,12 +85,12 @@ export const createBooking = async (req, res) => {
 export const getAllBookings = async (req, res) => {
   try {
     // read ascending
-
     const bookings = await prisma.booking.findMany({
       orderBy: { createdAt: "desc" },
       include: {
         User: { select: { fullName: true, phone: true } },
         Driver: { select: { fullName: true } },
+        patients: true, // เพิ่มการดึงข้อมูลผู้ป่วยทั้งหมด
       },
     });
 
@@ -124,6 +131,9 @@ export const updateBooking = async (req, res) => {
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: { status },
+      include: {
+        patients: true,
+      },
     });
 
     res.json({ message: "Booking status updated", booking: updatedBooking });
@@ -137,11 +147,17 @@ export const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const updatedBooking = await prisma.booking.delete({
+    // ลบข้อมูลผู้ป่วยที่เกี่ยวข้องก่อน
+    await prisma.patient.deleteMany({
+      where: { bookingId: id },
+    });
+
+    // จากนั้นลบข้อมูลการจอง
+    const deletedBooking = await prisma.booking.delete({
       where: { id },
     });
 
-    res.json({ message: "Booking cancelled", booking: updatedBooking });
+    res.json({ message: "Booking cancelled", booking: deletedBooking });
   } catch (error) {
     res.status(500).json({ message: "Error cancelling booking", error });
   }
@@ -176,6 +192,9 @@ export const assignDriver = async (req, res) => {
         assignedBy,
         status: "ASSIGNED",
       },
+      include: {
+        patients: true,
+      },
     });
 
     res.json({
@@ -195,6 +214,7 @@ export const getDriverAssignments = async (req, res) => {
       where: { driverId, status: "ASSIGNED" },
       include: {
         User: { select: { fullName: true, email: true } },
+        patients: true, // เพิ่มข้อมูลผู้ป่วย
       },
     });
 
@@ -210,7 +230,10 @@ export const completeBooking = async (req, res) => {
     const driverId = req.user.id; // ดึง ID ของคนขับจาก Token
 
     // ตรวจสอบว่าการจองมีอยู่จริง และเป็นของคนขับที่กำลังล็อกอินอยู่
-    const booking = await prisma.booking.findUnique({ where: { id } });
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: { patients: true },
+    });
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     if (booking.driverId !== driverId) {
@@ -225,6 +248,9 @@ export const completeBooking = async (req, res) => {
       data: {
         status: "COMPLETED",
         completedAt: new Date(),
+      },
+      include: {
+        patients: true,
       },
     });
 

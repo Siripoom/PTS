@@ -1,39 +1,43 @@
 import { useState } from "react";
 import { Input, Button, Card, message } from "antd";
-import { UserOutlined, LockOutlined } from "@ant-design/icons";
+import { UserOutlined, LockOutlined, IdcardOutlined } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
 import logo from "../../assets/ambulance 1.png";
 import Navbar from "../../components/Navbar/Navbar";
 import { loginUser } from "../../services/api";
 import { jwtDecode } from "jwt-decode";
+
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState(""); // เปลี่ยนจาก email เป็น login
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      message.warning("กรุณากรอกอีเมลและรหัสผ่าน");
+    if (!login || !password) {
+      message.warning("กรุณากรอกอีเมล/เลขบัตรประชาชน และรหัสผ่าน");
       return;
     }
 
     setLoading(true);
     try {
-      const data = { email, password };
+      const data = { login, password }; // ส่งข้อมูล login แทน email
       const res = await loginUser(data);
 
       if (res && res.token) {
         localStorage.setItem("token", res.token);
         message.success("เข้าสู่ระบบสำเร็จ");
-        const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+        const token = localStorage.getItem("token");
         if (token) {
           try {
-            const decodedToken = jwtDecode(token); // decode token
-            //Check role
+            const decodedToken = jwtDecode(token);
+
+            // จัดการการนำทางตาม role
             if (
               decodedToken.role === "ADMIN" ||
-              decodedToken.role === "STAFF"
+              decodedToken.role === "STAFF" ||
+              decodedToken.role === "PUBLIC_HEALTH_OFFICER" ||
+              decodedToken.role === "EXECUTIVE"
             ) {
               navigate("/admin/dashboard");
             } else {
@@ -72,12 +76,12 @@ export default function Login() {
           <div className="mt-8 space-y-5">
             <Input
               size="large"
-              placeholder="อีเมล"
-              prefix={<UserOutlined className="text-gray-400" />}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="อีเมล หรือ เลขบัตรประชาชน"
+              prefix={<IdcardOutlined className="text-gray-400" />}
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
               className="rounded-lg"
-              name="email"
+              name="login"
             />
             <Input.Password
               size="large"
@@ -87,6 +91,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="rounded-lg"
               name="password"
+              onPressEnter={handleLogin}
             />
             <Button
               type="primary"

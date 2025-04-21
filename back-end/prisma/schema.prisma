@@ -63,6 +63,11 @@ enum Role {
   HOST
   STAFF
   USER
+  VILLAGE_HEADMAN // ผู้ใหญ่บ้าน
+  ABBOT // อบต
+  PATIENT // ผู้ป่วย/ญาติผู้ป่วย
+  EXECUTIVE // ฝ่ายบริหาร
+  PUBLIC_HEALTH_OFFICER // จนท.กองสาธารณสุข/เจ้าหน้าที่กู้ชีพ
 }
 
 enum Status {

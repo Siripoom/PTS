@@ -2,7 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Button, Layout, Menu, Dropdown } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  LogoutOutlined,
+  MedicineBoxOutlined,
+  HistoryOutlined,
+  HomeOutlined,
+} from "@ant-design/icons";
 
 const { Header } = Layout;
 
@@ -11,11 +17,11 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+    const token = localStorage.getItem("token");
     if (token) {
       try {
-        const decodedToken = jwtDecode(token); // decode token
-        setUser(decodedToken); // ตั้งค่า user
+        const decodedToken = jwtDecode(token);
+        setUser(decodedToken);
       } catch (error) {
         console.error("Error decoding token:", error);
       }
@@ -23,20 +29,29 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    // ลบ token จาก localStorage
     localStorage.removeItem("token");
-    // รีเซ็ต user state
     setUser(null);
-    // นำทางกลับไปยังหน้าหลัก
     navigate("/");
   };
 
   // สร้าง userMenu เมื่อ user มีค่า เพื่อป้องกัน error
   const userMenu = user ? (
     <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />}>
+      <Menu.Item key="patients" icon={<MedicineBoxOutlined />}>
+        <Link to="/patients">จัดการข้อมูลผู้ป่วย</Link>
+      </Menu.Item>
+      <Menu.Item key="profile" icon={<HistoryOutlined />}>
         <Link to={`/history/${user.id}`}>ประวัติการจอง</Link>
       </Menu.Item>
+      {/* เพิ่มลิงก์ไปยังแดชบอร์ดเฉพาะสำหรับผู้มีสิทธิ์ */}
+      {["ADMIN", "STAFF", "PUBLIC_HEALTH_OFFICER", "EXECUTIVE"].includes(
+        user.role
+      ) && (
+        <Menu.Item key="dashboard" icon={<HomeOutlined />}>
+          <Link to="/admin/dashboard">หลังบ้าน</Link>
+        </Menu.Item>
+      )}
+      <Menu.Divider />
       <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
         ออกจากระบบ
       </Menu.Item>
@@ -64,6 +79,11 @@ const Navbar = () => {
         <Menu.Item key="booking">
           <Link to="/">จองรถฉุกเฉิน</Link>
         </Menu.Item>
+        {user && (
+          <Menu.Item key="patients">
+            <Link to="/patients">ข้อมูลผู้ป่วย</Link>
+          </Menu.Item>
+        )}
         <Menu.Item key="contact">
           <Link to="/contact">ติดต่อเจ้าหน้าที่</Link>
         </Menu.Item>

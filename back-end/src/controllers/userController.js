@@ -84,7 +84,7 @@ export const deleteUser = async (req, res) => {
 // ✅ สร้างผู้ใช้ใหม่
 export const createUser = async (req, res) => {
   try {
-    const { fullName, email, password, role, citizen_id } = req.body;
+    const { fullName, email, password, role, citizen_id, phone } = req.body;
 
     const existingUser = await prisma.user.findUnique({
       where: { citizen_id },
@@ -103,6 +103,7 @@ export const createUser = async (req, res) => {
         password: hashedPassword,
         role: role || "USER",
         citizen_id,
+        phone,
       },
     });
 

@@ -8,19 +8,28 @@ import {
   message,
   Spin,
   Modal,
-  Flex,
+  Select,
+  Typography,
+  Card,
+  Divider,
+  List,
+  Tag,
+  Space,
+  Tooltip,
 } from "antd";
 import {
   UserOutlined,
   EnvironmentOutlined,
   AimOutlined,
   PlusOutlined,
-  MinusOutlined,
+  IdcardOutlined,
+  DeleteOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import { useNavigate } from "react-router-dom";
-import { createBooking } from "../../services/api";
+import { useNavigate, Link } from "react-router-dom";
+import { createBooking, getAllPatients } from "../../services/api";
 import { jwtDecode } from "jwt-decode";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
@@ -32,6 +41,9 @@ import {
   InfoWindow,
   Circle,
 } from "@react-google-maps/api";
+
+const { Option } = Select;
+const { Text, Title } = Typography;
 
 const Booking = () => {
   const [location, setLocation] = useState("");
@@ -46,7 +58,14 @@ const Booking = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showInfoWindow, setShowInfoWindow] = useState(false);
   const [address, setAddress] = useState("");
-  const [countPatient, setCountPatient] = useState(1);
+
+  // เพิ่มสถานะเพื่อเก็บข้อมูลผู้ป่วย
+  const [patients, setPatients] = useState([]);
+  const [loadingPatients, setLoadingPatients] = useState(false);
+
+  // สถานะสำหรับรายการผู้ป่วยที่เลือก (รองรับหลายคน)
+  const [selectedPatients, setSelectedPatients] = useState([]);
+  const [currentPatient, setCurrentPatient] = useState(null);
 
   // เพิ่มสถานะเพื่อเก็บและแสดงตำแหน่งปัจจุบัน
   const [currentPosition, setCurrentPosition] = useState({
@@ -108,6 +127,21 @@ const Booking = () => {
     }
   };
 
+  // ฟังก์ชันเรียกข้อมูลผู้ป่วยทั้งหมด
+  const fetchPatients = async () => {
+    if (!isLoggedIn) return;
+
+    setLoadingPatients(true);
+    try {
+      const response = await getAllPatients();
+      setPatients(response);
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      message.error("ไม่สามารถดึงข้อมูลผู้ป่วยได้");
+    } finally {
+      setLoadingPatients(false);
+    }
+  };
 
   // Check if user is logged in on component mount and get user data
   useEffect(() => {
@@ -124,6 +158,9 @@ const Booking = () => {
             name: decodedToken.fullName,
           });
         }
+
+        // ดึงข้อมูลผู้ป่วย
+        fetchPatients();
       } catch (error) {
         console.error("Error decoding token:", error);
         setIsLoggedIn(false);
@@ -134,7 +171,7 @@ const Booking = () => {
 
     // Get current position if available
     getCurrentLocation();
-  }, [form]);
+  }, [form, isLoggedIn]);
 
   // Open Modal for selecting location
   const showMapModal = () => {
@@ -173,9 +210,61 @@ const Booking = () => {
     }
   };
 
-  const testFinish = (values) => {
+  // ฟังก์ชันเมื่อเลือกผู้ป่วยจาก dropdown
+  const handlePatientSelect = (patientId) => {
+    const patient = patients.find((p) => p.id === patientId);
+    setCurrentPatient(patient);
 
-  }
+    // เพิ่มปุ่มเพิ่มผู้ป่วยแทนที่จะเพิ่มทันที
+    // จะเพิ่มผู้ป่วยเมื่อกดปุ่ม "เพิ่มผู้ป่วย"
+  };
+
+  // ฟังก์ชันเพิ่มผู้ป่วยในรายการที่เลือก
+  const addPatientToList = () => {
+    if (!currentPatient) return;
+
+    // ตรวจสอบว่าผู้ป่วยคนนี้ถูกเลือกไปแล้วหรือไม่
+    if (selectedPatients.some((p) => p.id === currentPatient.id)) {
+      message.warning("ผู้ป่วยคนนี้ถูกเลือกไปแล้ว");
+      return;
+    }
+
+    // เพิ่มผู้ป่วยในรายการที่เลือก
+    setSelectedPatients([...selectedPatients, currentPatient]);
+
+    // ล้างค่าผู้ป่วยปัจจุบัน
+    setCurrentPatient(null);
+
+    // ล้างค่าใน form ของผู้ป่วย
+    form.setFieldsValue({ patient: undefined });
+
+    // ถ้าเป็นผู้ป่วยคนแรกและมีพิกัดก็ใช้พิกัดนั้น
+    if (
+      selectedPatients.length === 0 &&
+      currentPatient?.latitude &&
+      currentPatient?.longitude
+    ) {
+      setLatitude(currentPatient.latitude);
+      setLongitude(currentPatient.longitude);
+      setLocation(
+        `Latitude: ${currentPatient.latitude.toFixed(
+          6
+        )}, Longitude: ${currentPatient.longitude.toFixed(6)}`
+      );
+
+      if (currentPatient.address) {
+        setAddress(currentPatient.address);
+      }
+    }
+
+    message.success(`เพิ่ม ${currentPatient.name} ในรายการแล้ว`);
+  };
+
+  // ฟังก์ชันลบผู้ป่วยออกจากรายการที่เลือก
+  const removePatientFromList = (patientId) => {
+    setSelectedPatients(selectedPatients.filter((p) => p.id !== patientId));
+  };
+
   // Handle form submission
   const onFinish = async (values) => {
     if (!isLoggedIn) {
@@ -184,13 +273,13 @@ const Booking = () => {
       return;
     }
 
-    if (!latitude || !longitude) {
-      message.error("กรุณาเลือกตำแหน่งบนแผนที่");
+    if (selectedPatients.length === 0) {
+      message.error("กรุณาเลือกผู้ป่วยอย่างน้อย 1 คนก่อนทำการจอง");
       return;
     }
 
-    if(countPatient === 0){
-      message.error("กรุณากรอกผู้ป่วยอย่างน้อย 1 คน");
+    if (!latitude || !longitude) {
+      message.error("กรุณาเลือกตำแหน่งบนแผนที่");
       return;
     }
 
@@ -204,22 +293,17 @@ const Booking = () => {
         "YYYY-MM-DD HH:mm"
       ).toISOString();
 
-      // สร้างรายชื่อผู้ป่วย
-      let patient = [];
-      for (let i = 0; i < countPatient; i++) {
-        patient.push({
-          name: values[`patient${i}`],
-          idCard: values[`idCard${i}`],
-        });
-      }
-
       const bookingData = {
-        pickupDate,
+        // pickupDate,
         pickupTime: combinedDateTime,
         pickupLat: latitude,
         pickupLng: longitude,
-        pickupAddress: address || undefined, // Include address if available
-        patients: patient,
+        // pickupAddress: address || undefined,
+        patients: selectedPatients.map((patient) => ({
+          id: patient.id,
+          name: patient.name,
+          idCard: patient.idCard,
+        })),
       };
 
       console.log("📦 Sending booking data:", bookingData);
@@ -230,7 +314,12 @@ const Booking = () => {
         navigate(`/booking/success`, {
           state: {
             bookingId: response.booking.id,
-            bookingData,
+            bookingData: {
+              ...bookingData,
+              name: user?.fullName,
+              userId: user?.id,
+              patientCount: selectedPatients.length,
+            },
           },
         });
       } else {
@@ -244,27 +333,10 @@ const Booking = () => {
     }
   };
 
-  const deletePatient = () => {
-    setCountPatient(countPatient - 1);
-  };
-
-  // สร้างไอคอนสำหรับ Marker ที่แตกต่างกัน
-  const currentLocationIcon = {
-    path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
-    fillColor: "#4285F4",
-    fillOpacity: 1,
-    strokeColor: "#FFFFFF",
-    strokeWeight: 2,
-    scale: 8,
-  };
-
-  const selectedLocationIcon = {
-    path: window.google?.maps?.SymbolPath?.BACKWARD_CLOSED_ARROW || 0,
-    fillColor: "#DB4437",
-    fillOpacity: 1,
-    strokeColor: "#FFFFFF",
-    strokeWeight: 2,
-    scale: 6,
+  // ฟังก์ชันกรองข้อมูลผู้ป่วยสำหรับ Select
+  const filterOption = (input, option) => {
+    if (!option?.label) return false;
+    return option.label.toLowerCase().includes(input.toLowerCase());
   };
 
   return (
@@ -307,57 +379,133 @@ const Booking = () => {
               className="space-y-6"
               disabled={!isLoggedIn}
             >
-              <Form.Item
-                name="name"
-                label="ชื่อผู้จอง"
-                rules={[{ required: true, message: "โปรดป้อนชื่อผู้จอง" }]}
-              >
-                <Input
-                  prefix={<UserOutlined />}
-                  placeholder="ชื่อผู้จอง"
-                  className="rounded-lg shadow-sm"
-                />
-              </Form.Item>
+              {isLoggedIn && patients.length === 0 && (
+                <Card className="bg-yellow-50 border-yellow-200 mb-6">
+                  <Title level={5} className="text-yellow-700 mb-2">
+                    ยังไม่มีข้อมูลผู้ป่วย
+                  </Title>
+                  <Text className="text-yellow-600 block mb-3">
+                    คุณยังไม่มีข้อมูลผู้ป่วยในระบบ
+                    กรุณาเพิ่มข้อมูลผู้ป่วยก่อนจองรถฉุกเฉิน
+                  </Text>
+                  <Link to="/patients">
+                    <Button
+                      type="primary"
+                      className="bg-yellow-500 hover:bg-yellow-600 border-none"
+                    >
+                      <PlusOutlined /> เพิ่มข้อมูลผู้ป่วย
+                    </Button>
+                  </Link>
+                </Card>
+              )}
 
-              {Array.from({ length: countPatient }).map((_, i) => (
-                <Flex key={i} justify="space-between" style={{ width: "100%", height: "100%" }} align="center">
-                  <Form.Item
-                    name={`patient${i}`}
-                    label={`ผู้ป่วย ${i + 1}`}
-                    style={{ marginBottom: "0px" }}
-                    rules={[{ required: true, message: "โปรดใส่ชื่อผู้ป่วย" }]}
-                  >
-                    <Input
-                      placeholder={`ชื่อผู้ป่วย ${i + 1}`}
-                      className="rounded-lg shadow-sm mb-0"
-                      style={{ marginBottom: "0px" }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name={`idCard${i}`}
-                    label={`เลขบัตรประชาชน ${i + 1}`}
-                    style={{ marginBottom: "0px", marginLeft: "5px", }}
-                    rules={[{ required: true, message: "ไม่ถูกต้อง" ,pattern: /^[0-9]{13}$/}]}
-                  >
-                    <Input
-                      placeholder={`ชื่อผู้ป่วย ${i + 1}`}
-                      className="rounded-lg shadow-sm mb-0"
-                      style={{ marginBottom: "0px" }}
-                    />
-                  </Form.Item>
-                  
-                </Flex>
-              ))}
-              <hr />
-              <Flex justify="center" align="center">
-                <Button style={{ backgroundColor: "green", color: "white", "borderRadius": "50%" }} onClick={() => setCountPatient(countPatient + 1)}><PlusOutlined /></Button>
-                {
-                  countPatient > 1 && (
-                    <Button style={{ backgroundColor: "#DB4437", color: "white", "borderRadius": "50%" }} onClick={() => deletePatient()}><MinusOutlined /></Button>
-                  )
-                }
-              </Flex>
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    รายการผู้ป่วย
+                  </label>
+                  <Space>
+                    <Link to="/patients">
+                      <Button type="link" size="small" icon={<PlusOutlined />}>
+                        เพิ่มข้อมูลผู้ป่วยใหม่
+                      </Button>
+                    </Link>
+                  </Space>
+                </div>
 
+                <div className="flex items-center mb-3">
+                  <Form.Item name="patient" className="mb-0 flex-grow">
+                    <Select
+                      showSearch
+                      placeholder="เลือกผู้ป่วย"
+                      optionFilterProp="label"
+                      onChange={handlePatientSelect}
+                      filterOption={filterOption}
+                      notFoundContent={
+                        loadingPatients ? (
+                          <Spin size="small" />
+                        ) : (
+                          <div className="p-2 text-center">
+                            <Text type="secondary">ไม่พบข้อมูล</Text>
+                          </div>
+                        )
+                      }
+                      loading={loadingPatients}
+                      disabled={patients.length === 0}
+                    >
+                      {patients.map((patient) => (
+                        <Option
+                          key={patient.id}
+                          value={patient.id}
+                          label={`${patient.name} (${patient.idCard})`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-500">
+                              เลขบัตร:{" "}
+                              {patient.idCard.replace(
+                                /(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/,
+                                "$1-$2-$3-$4-$5"
+                              )}
+                            </span>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={addPatientToList}
+                    disabled={!currentPatient}
+                    className="ml-2"
+                  >
+                    เพิ่ม
+                  </Button>
+                </div>
+
+                {/* แสดงรายการผู้ป่วยที่เลือก */}
+                {selectedPatients.length > 0 ? (
+                  <div>
+                    <Divider className="my-3" />
+                    <List
+                      size="small"
+                      bordered
+                      dataSource={selectedPatients}
+                      renderItem={(patient) => (
+                        <List.Item
+                          actions={[
+                            <Tooltip title="นำออกจากรายการ">
+                              <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() =>
+                                  removePatientFromList(patient.id)
+                                }
+                                size="small"
+                              />
+                            </Tooltip>,
+                          ]}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{patient.name}</span>
+                            <span className="text-xs text-gray-500">
+                              {patient.idCard.replace(
+                                /(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/,
+                                "$1-$2-$3-$4-$5"
+                              )}
+                            </span>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-2">
+                    <Text type="secondary">ยังไม่ได้เลือกผู้ป่วย</Text>
+                  </div>
+                )}
+              </div>
 
               <Form.Item
                 name="pickupDate"
@@ -419,9 +567,16 @@ const Booking = () => {
                   htmlType="submit"
                   block
                   className="rounded-lg py-3 text-white bg-green-600 hover:bg-green-700"
-                  disabled={!isLoggedIn || !latitude || !longitude}
+                  disabled={
+                    !isLoggedIn ||
+                    selectedPatients.length === 0 ||
+                    !latitude ||
+                    !longitude
+                  }
                 >
-                  ยืนยันการจอง
+                  ยืนยันการจอง{" "}
+                  {selectedPatients.length > 0 &&
+                    `(${selectedPatients.length} คน)`}
                 </Button>
               </Form.Item>
             </Form>
@@ -482,7 +637,14 @@ const Booking = () => {
                   <>
                     <Marker
                       position={currentPosition}
-                      icon={currentLocationIcon}
+                      icon={{
+                        path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
+                        fillColor: "#4285F4",
+                        fillOpacity: 1,
+                        strokeColor: "#FFFFFF",
+                        strokeWeight: 2,
+                        scale: 8,
+                      }}
                       zIndex={1}
                       title="ตำแหน่งปัจจุบันของคุณ"
                     />
@@ -509,7 +671,16 @@ const Booking = () => {
                         lng: longitude,
                       }}
                       draggable={true}
-                      icon={selectedLocationIcon}
+                      icon={{
+                        path:
+                          window.google?.maps?.SymbolPath
+                            ?.BACKWARD_CLOSED_ARROW || 0,
+                        fillColor: "#DB4437",
+                        fillOpacity: 1,
+                        strokeColor: "#FFFFFF",
+                        strokeWeight: 2,
+                        scale: 6,
+                      }}
                       zIndex={2}
                       onDragEnd={(e) => {
                         const lat = e.latLng.lat();

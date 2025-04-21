@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { Result, Button, Card, Descriptions, Spin } from "antd";
+import {
+  Result,
+  Button,
+  Card,
+  Descriptions,
+  Spin,
+  Table,
+  Typography,
+} from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import dayjs from "dayjs";
+
+const { Title, Text } = Typography;
 
 const BookingSuccess = () => {
   const location = useLocation();
@@ -23,7 +33,7 @@ const BookingSuccess = () => {
       return () => clearTimeout(timer);
     }
   }, [location, navigate]);
-  console.log(bookingData);
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -35,6 +45,22 @@ const BookingSuccess = () => {
       </div>
     );
   }
+
+  // คอลัมน์สำหรับตารางผู้ป่วย
+  const patientsColumns = [
+    {
+      title: "ชื่อผู้ป่วย",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "เลขบัตรประชาชน",
+      dataIndex: "idCard",
+      key: "idCard",
+      render: (text) =>
+        text.replace(/(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/, "$1-$2-$3-$4-$5"),
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400 to-blue-600">
@@ -77,8 +103,24 @@ const BookingSuccess = () => {
                   {`${bookingData.pickupLat}, ${bookingData.pickupLng}`}
                 </Descriptions.Item>
               )}
+              <Descriptions.Item label="จำนวนผู้ป่วย">
+                {bookingData.patients?.length || 1} คน
+              </Descriptions.Item>
             </Descriptions>
           </Card>
+
+          {/* เพิ่มการแสดงรายชื่อผู้ป่วย */}
+          {bookingData.patients && bookingData.patients.length > 0 && (
+            <Card title="รายชื่อผู้ป่วย" className="shadow-lg mb-6">
+              <Table
+                dataSource={bookingData.patients}
+                columns={patientsColumns}
+                pagination={false}
+                rowKey="idCard"
+                size="small"
+              />
+            </Card>
+          )}
 
           <div className="flex space-x-4 justify-center">
             <Link to="/">
