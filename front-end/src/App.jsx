@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import ManageBooking from "./pages/ManageBooking/ManageBooking";
 import User from "./pages/User/User";
 import ManageBookingDetail from "./pages/ManageBooking/ManageBookingDetail";
+import PatientManagement from "./pages/ManagePatients/ManagePatients"; // เพิ่มการนำเข้า
 import ContactUs from "./pages/Contact/Contact";
 import History from "./pages/History/้History";
 
@@ -95,6 +96,15 @@ function App() {
           element={
             <ProtectedAdminRoute>
               <ManageBookingDetail />
+            </ProtectedAdminRoute>
+          }
+        />
+        {/* เพิ่มเส้นทางไปยังหน้าจัดการผู้ป่วย */}
+        <Route
+          path="/admin/patients"
+          element={
+            <ProtectedAdminRoute>
+              <PatientManagement />
             </ProtectedAdminRoute>
           }
         />

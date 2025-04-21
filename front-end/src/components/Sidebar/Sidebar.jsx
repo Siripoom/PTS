@@ -8,7 +8,7 @@ import {
   ReadOutlined,
   FileTextOutlined,
   UserOutlined,
-  CalendarOutlined,
+  MedicineBoxOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
 import "./Sidebar.css";
@@ -68,6 +68,15 @@ const Sidebar = () => {
               }
             >
               <ReadOutlined /> <span>การจอง</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/patients"
+              className={({ isActive }) =>
+                isActive ? "nav-item active" : "nav-item"
+              }
+            >
+              <MedicineBoxOutlined /> <span>ผู้ป่วย</span>
             </NavLink>
 
             <NavLink

@@ -150,3 +150,124 @@ export const deleteBooking = async (bookingId) => {
     throw error.response.data;
   }
 };
+
+// สำหรับเพิ่มใน api.js
+
+// Function to get all patients
+export const getAllPatients = async () => {
+  try {
+    const token = localStorage.getItem("token")?.replace(/['"]+/g, "");
+    const response = await api.get("/api/patients", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Function to get patient by booking ID
+export const getPatientsByBookingId = async (bookingId) => {
+  try {
+    const token = localStorage.getItem("token")?.replace(/['"]+/g, "");
+    const response = await api.get(`/api/patients/${bookingId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Function to create a new patient with location
+export const createPatient = async (patientData) => {
+  try {
+    const token = localStorage.getItem("token")?.replace(/['"]+/g, "");
+
+    // แปลงข้อมูลละติจูดและลองติจูดเป็นตัวเลข (ถ้ามี)
+    const formattedData = {
+      ...patientData,
+      latitude: patientData.latitude ? parseFloat(patientData.latitude) : null,
+      longitude: patientData.longitude
+        ? parseFloat(patientData.longitude)
+        : null,
+    };
+
+    const response = await api.post("/api/patients", formattedData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Function to update a patient with location
+export const updatePatient = async (patientId, patientData) => {
+  try {
+    const token = localStorage.getItem("token")?.replace(/['"]+/g, "");
+
+    // แปลงข้อมูลละติจูดและลองติจูดเป็นตัวเลข (ถ้ามี)
+    const formattedData = {
+      ...patientData,
+      latitude: patientData.latitude ? parseFloat(patientData.latitude) : null,
+      longitude: patientData.longitude
+        ? parseFloat(patientData.longitude)
+        : null,
+    };
+
+    const response = await api.put(
+      `/api/patients/${patientId}`,
+      formattedData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Function to delete a patient
+export const deletePatient = async (patientId) => {
+  try {
+    const token = localStorage.getItem("token")?.replace(/['"]+/g, "");
+    const response = await api.delete(`/api/patients/${patientId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Function to get location by coordinates (ใช้ reverse geocoding จาก Google Maps API)
+export const getAddressByCoordinates = async (latitude, longitude) => {
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${
+        import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      }`
+    );
+    const data = await response.json();
+
+    if (data.status === "OK" && data.results && data.results.length > 0) {
+      return data.results[0].formatted_address;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching address:", error);
+    return null;
+  }
+};

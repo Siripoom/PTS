@@ -46,13 +46,18 @@ model Booking {
 }
 
 model Patient {
-  id String @id @unique @default(uuid())
-  name String
-  idCard String
-  bookingId String @map("booking_id")
-  booking Booking @relation(fields: [bookingId], references: [id])
-}
+  id           String   @id @unique @default(uuid())
+  name         String   // ชื่อผู้ป่วย
+  idCard       String   // เลขบัตรประชาชน 13 หลัก
+  houseNumber  String?  // บ้านเลขที่
+  village      String?  // หมู่ (เช่น หมู่ 1-20)
+  address      String?  // ตำบล อำเภอ จังหวัด
+  latitude     Float?   // ละติจูดตำแหน่งผู้ป่วย
+  longitude    Float?   // ลองติจูดตำแหน่งผู้ป่วย
+  
 
+  Booking Booking[]
+}
 enum Role {
   ADMIN
   HOST
